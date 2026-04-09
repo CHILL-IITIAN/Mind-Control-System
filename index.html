@@ -1,0 +1,811 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MIND CONTROL SYSTEM — BRUTAL MODE</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700;800&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        :root {
+            --bg-black: #0a0a0a;
+            --terminal-black: #0d0d0d;
+            --blood-red: #8b0000;
+            --crimson: #dc143c;
+            --bright-red: #ff1a1a;
+            --text-gray: #888;
+            --text-white: #e0e0e0;
+            --glow-red: rgba(220, 20, 60, 0.3);
+        }
+        
+        body {
+            background: var(--bg-black);
+            color: var(--text-white);
+            font-family: 'JetBrains Mono', monospace;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+        }
+        
+        /* Scanline effect */
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: repeating-linear-gradient(
+                0deg,
+                rgba(0, 0, 0, 0.15),
+                rgba(0, 0, 0, 0.15) 1px,
+                transparent 1px,
+                transparent 2px
+            );
+            pointer-events: none;
+            z-index: 1000;
+        }
+        
+        /* Header */
+        .header {
+            background: var(--terminal-black);
+            border-bottom: 2px solid var(--blood-red);
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 20px var(--glow-red);
+        }
+        
+        .logo {
+            font-weight: 800;
+            font-size: 1.2rem;
+            color: var(--bright-red);
+            text-shadow: 0 0 10px var(--blood-red);
+            letter-spacing: 2px;
+        }
+        
+        .status {
+            font-size: 0.8rem;
+            color: var(--text-gray);
+        }
+        
+        .status::before {
+            content: "●";
+            color: var(--crimson);
+            margin-right: 0.5rem;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+        
+        /* Main Container */
+        .container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            max-width: 900px;
+            width: 100%;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        /* Terminal Output Area */
+        .terminal {
+            flex: 1;
+            background: var(--terminal-black);
+            border: 1px solid #222;
+            border-left: 3px solid var(--blood-red);
+            padding: 1.5rem;
+            overflow-y: auto;
+            max-height: 60vh;
+            margin-bottom: 1rem;
+            box-shadow: inset 0 0 30px rgba(0,0,0,0.8);
+        }
+        
+        .terminal::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        .terminal::-webkit-scrollbar-track {
+            background: var(--terminal-black);
+        }
+        
+        .terminal::-webkit-scrollbar-thumb {
+            background: var(--blood-red);
+            border-radius: 4px;
+        }
+        
+        .empty-state {
+            color: var(--text-gray);
+            font-style: italic;
+            text-align: center;
+            padding: 3rem;
+            opacity: 0.6;
+        }
+        
+        /* Message Styles */
+        .message {
+            margin-bottom: 1.5rem;
+            animation: fadeIn 0.3s ease-in;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .timestamp {
+            color: var(--text-gray);
+            font-size: 0.75rem;
+            margin-bottom: 0.3rem;
+        }
+        
+        .user-input {
+            color: var(--text-gray);
+            margin-bottom: 0.5rem;
+            padding-left: 1rem;
+            border-left: 2px solid #333;
+        }
+        
+        .user-input::before {
+            content: "> ";
+            color: var(--crimson);
+        }
+        
+        .system-response {
+            color: var(--bright-red);
+            font-weight: 700;
+            font-size: 1.1rem;
+            line-height: 1.6;
+            text-shadow: 0 0 5px rgba(255, 26, 26, 0.3);
+            padding: 0.5rem 0;
+        }
+        
+        .cursor {
+            display: inline-block;
+            width: 8px;
+            height: 1.2em;
+            background: var(--bright-red);
+            margin-left: 2px;
+            animation: blink 1s infinite;
+            vertical-align: text-bottom;
+        }
+        
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+        }
+        
+        /* Input Area */
+        .input-section {
+            background: var(--terminal-black);
+            border: 1px solid #222;
+            border-left: 3px solid var(--blood-red);
+            padding: 1.5rem;
+        }
+        
+        .input-wrapper {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+        
+        .prompt {
+            color: var(--crimson);
+            font-weight: 700;
+            white-space: nowrap;
+        }
+        
+        input[type="text"] {
+            flex: 1;
+            background: #111;
+            border: 1px solid #333;
+            color: var(--text-white);
+            padding: 0.8rem 1rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1rem;
+            outline: none;
+            transition: all 0.3s;
+        }
+        
+        input[type="text"]:focus {
+            border-color: var(--blood-red);
+            box-shadow: 0 0 10px var(--glow-red);
+        }
+        
+        input[type="text"]::placeholder {
+            color: #444;
+        }
+        
+        .btn {
+            background: transparent;
+            border: 2px solid var(--blood-red);
+            color: var(--crimson);
+            padding: 0.8rem 1.5rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .btn:hover {
+            background: var(--blood-red);
+            color: var(--text-white);
+            box-shadow: 0 0 15px var(--glow-red);
+        }
+        
+        .btn:active {
+            transform: scale(0.98);
+        }
+        
+        .btn-clear {
+            border-color: #444;
+            color: var(--text-gray);
+            font-size: 0.8rem;
+            padding: 0.5rem 1rem;
+        }
+        
+        .btn-clear:hover {
+            background: #333;
+            border-color: #555;
+            color: var(--text-white);
+        }
+        
+        /* Controls */
+        .controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid #222;
+        }
+        
+        .stats {
+            color: var(--text-gray);
+            font-size: 0.8rem;
+        }
+        
+        .stats span {
+            color: var(--crimson);
+        }
+        
+        /* Category Badge */
+        .category-badge {
+            display: inline-block;
+            font-size: 0.65rem;
+            color: var(--text-gray);
+            border: 1px solid #333;
+            padding: 0.2rem 0.5rem;
+            margin-top: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        /* Warning Banner */
+        .warning {
+            background: rgba(139, 0, 0, 0.1);
+            border: 1px solid var(--blood-red);
+            color: var(--crimson);
+            padding: 0.8rem;
+            margin-bottom: 1rem;
+            font-size: 0.85rem;
+            text-align: center;
+            letter-spacing: 1px;
+        }
+        
+        /* Mobile Responsive */
+        @media (max-width: 600px) {
+            .header {
+                padding: 1rem;
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            
+            .container {
+                padding: 1rem;
+            }
+            
+            .input-wrapper {
+                flex-direction: column;
+            }
+            
+            input[type="text"] {
+                width: 100%;
+            }
+            
+            .system-response {
+                font-size: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="logo">◈ MIND_CONTROL_SYS.exe</div>
+        <div class="status">BRUTAL_MODE: ACTIVE</div>
+    </header>
+    
+    <div class="container">
+        <div class="warning">
+            ⚠ WARNING: This system is designed to eliminate weakness. No comfort provided.
+        </div>
+        
+        <div class="terminal" id="terminal">
+            <div class="empty-state" id="emptyState">
+                [ SYSTEM READY ]<br>
+                Enter your weakness. Receive your reality.
+            </div>
+        </div>
+        
+        <div class="input-section">
+            <div class="input-wrapper">
+                <span class="prompt">CONFESS ></span>
+                <input type="text" id="userInput" placeholder="I feel lazy, I don't want to study, I'll do it later..." autocomplete="off">
+                <button class="btn" id="executeBtn">EXECUTE</button>
+            </div>
+            
+            <div class="controls">
+                <div class="stats">
+                    SESSIONS TERMINATED: <span id="sessionCount">0</span> | 
+                    EXCUSES DESTROYED: <span id="excuseCount">0</span>
+                </div>
+                <button class="btn btn-clear" id="clearBtn">PURGE MEMORY</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ============================================
+        // MIND CONTROL SYSTEM - BRUTAL MODE
+        // All code wrapped in DOMContentLoaded for reliability
+        // ============================================
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('[SYSTEM] Mind Control System initializing...');
+            
+            // Brutal Response Database
+            const responseDatabase = {
+                identity: [
+                    "This is exactly who you're becoming. Is that who you want to be?",
+                    "Every time you choose comfort, you vote for the weak version of yourself.",
+                    "You are building your identity one excuse at a time. This is the blueprint.",
+                    "This behavior is not an accident. It's a pattern. Patterns become personality.",
+                    "You are not stuck. You are committed to this version of yourself.",
+                    "The person you're avoiding becoming is watching you make this choice.",
+                    "This is the difference between who you are and who you could be.",
+                    "You're not tired. You're comfortable with being less than you're capable of."
+                ],
+                reality: [
+                    "Time is moving. You are not. The gap is widening.",
+                    "While you hesitate, someone else is executing. The distance grows.",
+                    "The clock doesn't negotiate. Neither does opportunity.",
+                    "Tomorrow is not guaranteed. Today is all you have. You're wasting it.",
+                    "One year from now, you'll wish you started today. But you didn't.",
+                    "The world doesn't pause for your hesitation. It moves forward without you.",
+                    "Every second of delay is a second you can never recover.",
+                    "Your future self is watching you right now. Disappointed."
+                ],
+                consequence: [
+                    "This leads exactly where you think it does. You know the destination.",
+                    "Every delay is a vote for the life you claim you don't want.",
+                    "This is how potential dies. Not with a bang, but with 'later'.",
+                    "You're not postponing the task. You're postponing your life.",
+                    "This choice has a price. You'll pay it with regret.",
+                    "The compound effect of small failures is catastrophic failure.",
+                    "You're not just skipping this moment. You're training yourself to skip every moment.",
+                    "This is the architecture of failure. One excuse at a time."
+                ],
+                comparison: [
+                    "Someone with less talent and more discipline is outperforming you right now.",
+                    "While you think, they act. While you plan, they execute.",
+                    "Your competition isn't waiting for motivation. They show up regardless.",
+                    "Someone else is doing what you won't, and getting what you want.",
+                    "The gap between you and them isn't talent. It's this exact moment.",
+                    "They're not smarter. They're just not negotiating with weakness like you are.",
+                    "Someone just started while you were thinking about starting.",
+                    "Your excuses don't exist in their vocabulary. That's why they're ahead."
+                ],
+                control: [
+                    "You don't lack time. You lack control over your impulses.",
+                    "No one is stopping you. The only obstacle is the voice you're listening to right now.",
+                    "You are choosing this. Own it. Don't hide behind circumstance.",
+                    "This is not happening to you. You are doing this to yourself.",
+                    "You have the power to change this instant. You're choosing not to.",
+                    "External circumstances don't create your results. Your choices do.",
+                    "You're not a victim of your environment. You're a victim of your decisions.",
+                    "The only permission you need is your own. Stop waiting for external validation."
+                ]
+            };
+
+            // Keyword mapping for context-aware responses
+            const keywordMap = {
+                'lazy': ['identity', 'control'],
+                'tired': ['identity', 'reality'],
+                'later': ['consequence', 'reality'],
+                'tomorrow': ['consequence', 'reality'],
+                'study': ['comparison', 'consequence'],
+                'work': ['comparison', 'consequence'],
+                'motivation': ['control', 'identity'],
+                'time': ['reality', 'control'],
+                'busy': ['control', 'comparison'],
+                'hard': ['identity', 'comparison'],
+                'can': ['control', 'identity'],
+                'won': ['control', 'consequence'],
+                'maybe': ['consequence', 'reality'],
+                'try': ['identity', 'control'],
+                'someday': ['consequence', 'reality'],
+                'procrastinate': ['consequence', 'identity'],
+                'delay': ['consequence', 'reality'],
+                'wait': ['reality', 'consequence'],
+                'excuse': ['control', 'identity'],
+                'fear': ['identity', 'control'],
+                'anxiety': ['control', 'reality']
+            };
+
+            // State variables
+            let sessionHistory = [];
+            let isTyping = false;
+            let typingTimeout = null;
+            let typingStartTime = null;
+            const TYPING_TIMEOUT_LIMIT = 10000; // 10 seconds max typing time
+
+            // DOM Element References
+            const terminal = document.getElementById('terminal');
+            const userInput = document.getElementById('userInput');
+            const executeBtn = document.getElementById('executeBtn');
+            const clearBtn = document.getElementById('clearBtn');
+            const sessionCountEl = document.getElementById('sessionCount');
+            const excuseCountEl = document.getElementById('excuseCount');
+            const emptyState = document.getElementById('emptyState');
+
+            console.log('[SYSTEM] DOM elements cached');
+
+            // ============================================
+            // CORE FUNCTIONS
+            // ============================================
+
+            // Load from localStorage
+            function loadHistory() {
+                try {
+                    const saved = localStorage.getItem('mindControlHistory');
+                    const sessions = localStorage.getItem('mindControlSessions');
+                    const excuses = localStorage.getItem('mindControlExcuses');
+                    
+                    if (saved) {
+                        sessionHistory = JSON.parse(saved);
+                        console.log('[SYSTEM] History loaded:', sessionHistory.length, 'sessions');
+                        renderHistory();
+                    }
+                    
+                    if (sessions) sessionCountEl.textContent = sessions;
+                    if (excuses) excuseCountEl.textContent = excuses;
+                } catch (e) {
+                    console.error('[SYSTEM ERROR] Failed to load history:', e);
+                    sessionHistory = [];
+                }
+            }
+
+            // Save to localStorage
+            function saveHistory() {
+                try {
+                    localStorage.setItem('mindControlHistory', JSON.stringify(sessionHistory));
+                    localStorage.setItem('mindControlSessions', sessionHistory.length.toString());
+                    localStorage.setItem('mindControlExcuses', sessionHistory.length.toString());
+                    console.log('[SYSTEM] History saved');
+                } catch (e) {
+                    console.error('[SYSTEM ERROR] Failed to save history:', e);
+                }
+            }
+
+            // Get contextual response
+            function getResponse(input) {
+                const lowerInput = input.toLowerCase();
+                let categories = [];
+                
+                // Find matching categories based on keywords
+                for (const [keyword, cats] of Object.entries(keywordMap)) {
+                    if (lowerInput.includes(keyword)) {
+                        categories.push(...cats);
+                    }
+                }
+                
+                // If no keywords match, use random category
+                if (categories.length === 0) {
+                    categories = Object.keys(responseDatabase);
+                }
+                
+                // Select random category from matches
+                const selectedCategory = categories[Math.floor(Math.random() * categories.length)];
+                const responses = responseDatabase[selectedCategory];
+                
+                // Get random response from category
+                const response = responses[Math.floor(Math.random() * responses.length)];
+                
+                return { text: response, category: selectedCategory };
+            }
+
+            // Typewriter effect with safety mechanisms
+            function typeResponse(element, text, callback) {
+                console.log('[SYSTEM] Starting typewriter animation');
+                isTyping = true;
+                typingStartTime = Date.now();
+                let index = 0;
+                
+                // Safety: Force complete typing if it takes too long
+                const safetyTimeout = setTimeout(function() {
+                    if (isTyping) {
+                        console.log('[SYSTEM WARNING] Typing timeout reached, forcing completion');
+                        element.innerHTML = text;
+                        isTyping = false;
+                        if (callback) callback();
+                    }
+                }, TYPING_TIMEOUT_LIMIT);
+                
+                function type() {
+                    try {
+                        // Check if we've been typing too long (emergency brake)
+                        if (Date.now() - typingStartTime > TYPING_TIMEOUT_LIMIT) {
+                            throw new Error('Typing animation exceeded time limit');
+                        }
+                        
+                        if (index < text.length && isTyping) {
+                            element.innerHTML = text.substring(0, index + 1) + '<span class="cursor"></span>';
+                            index++;
+                            // Variable speed for realism (30-70ms per character)
+                            const delay = 30 + Math.random() * 40;
+                            typingTimeout = setTimeout(type, delay);
+                        } else {
+                            // Typing complete or interrupted
+                            clearTimeout(safetyTimeout);
+                            element.innerHTML = text;
+                            isTyping = false;
+                            console.log('[SYSTEM] Typewriter animation complete');
+                            if (callback && index >= text.length) callback();
+                        }
+                    } catch (e) {
+                        console.error('[SYSTEM ERROR] Typing animation failed:', e);
+                        clearTimeout(safetyTimeout);
+                        element.innerHTML = text;
+                        isTyping = false;
+                        if (callback) callback();
+                    }
+                }
+                
+                type();
+            }
+
+            // Force stop typing (emergency function)
+            function stopTyping() {
+                if (typingTimeout) {
+                    clearTimeout(typingTimeout);
+                    typingTimeout = null;
+                }
+                isTyping = false;
+                console.log('[SYSTEM] Typing animation force-stopped');
+            }
+
+            // Process user input - MAIN FUNCTION
+            function processInput() {
+                console.log('[SYSTEM] processInput() called');
+                
+                // If currently typing, stop it and show full text immediately
+                if (isTyping) {
+                    console.log('[SYSTEM] Interrupting current typing');
+                    stopTyping();
+                    // Find the last response element and show full text
+                    const lastResponse = terminal.querySelector('.system-response:last-child');
+                    if (lastResponse && lastResponse.dataset.fullText) {
+                        lastResponse.innerHTML = lastResponse.dataset.fullText;
+                    }
+                }
+                
+                const input = userInput.value.trim();
+                console.log('[SYSTEM] Input received:', input);
+                
+                // Validate input
+                if (!input || input === '') {
+                    console.log('[SYSTEM] Empty input rejected');
+                    userInput.focus();
+                    return;
+                }
+                
+                // Hide empty state
+                if (emptyState) {
+                    emptyState.style.display = 'none';
+                }
+                
+                // Create message container
+                const messageDiv = document.createElement('div');
+                messageDiv.className = 'message';
+                
+                const timestamp = new Date().toLocaleTimeString('en-US', { 
+                    hour12: false, 
+                    hour: '2-digit', 
+                    minute: '2-digit',
+                    second: '2-digit'
+                });
+                
+                // Get brutal response
+                const response = getResponse(input);
+                const responseId = 'response-' + Date.now();
+                
+                console.log('[SYSTEM] Selected response:', response.category, '-', response.text.substring(0, 30) + '...');
+                
+                // Build message HTML (response text stored in data attribute for recovery)
+                messageDiv.innerHTML = 
+                    '<div class="timestamp">[' + timestamp + '] SESSION #' + (sessionHistory.length + 1) + '</div>' +
+                    '<div class="user-input">' + escapeHtml(input) + '</div>' +
+                    '<div class="system-response" id="' + responseId + '" data-full-text="' + escapeHtml(response.text) + '"></div>' +
+                    '<div class="category-badge">' + response.category + ' protocol</div>';
+                
+                terminal.appendChild(messageDiv);
+                terminal.scrollTop = terminal.scrollHeight;
+                
+                // Store in history
+                const session = {
+                    timestamp: timestamp,
+                    input: input,
+                    response: response.text,
+                    category: response.category
+                };
+                sessionHistory.push(session);
+                saveHistory();
+                
+                // Update stats
+                sessionCountEl.textContent = sessionHistory.length;
+                excuseCountEl.textContent = sessionHistory.length;
+                
+                // Clear and refocus input
+                userInput.value = '';
+                userInput.focus();
+                console.log('[SYSTEM] Input cleared and focused');
+                
+                // Type the response
+                const responseElement = document.getElementById(responseId);
+                if (responseElement) {
+                    typeResponse(responseElement, response.text, function() {
+                        console.log('[SYSTEM] Response fully displayed');
+                    });
+                } else {
+                    console.error('[SYSTEM ERROR] Response element not found');
+                }
+            }
+
+            // Render history from localStorage
+            function renderHistory() {
+                console.log('[SYSTEM] Rendering history...');
+                
+                if (sessionHistory.length === 0) return;
+                
+                if (emptyState) {
+                    emptyState.style.display = 'none';
+                }
+                
+                // Clear terminal except empty state (which is hidden)
+                terminal.innerHTML = '';
+                terminal.appendChild(emptyState);
+                emptyState.style.display = 'none';
+                
+                sessionHistory.forEach(function(session, index) {
+                    const messageDiv = document.createElement('div');
+                    messageDiv.className = 'message';
+                    messageDiv.innerHTML = 
+                        '<div class="timestamp">[' + session.timestamp + '] SESSION #' + (index + 1) + '</div>' +
+                        '<div class="user-input">' + escapeHtml(session.input) + '</div>' +
+                        '<div class="system-response">' + escapeHtml(session.response) + '</div>' +
+                        '<div class="category-badge">' + session.category + ' protocol</div>';
+                    terminal.appendChild(messageDiv);
+                });
+                
+                terminal.scrollTop = terminal.scrollHeight;
+                console.log('[SYSTEM] History rendered:', sessionHistory.length, 'sessions');
+            }
+
+            // Clear history
+            function clearHistory() {
+                console.log('[SYSTEM] Clear history requested');
+                
+                if (isTyping) {
+                    stopTyping();
+                }
+                
+                if (confirm('PURGE ALL SESSION DATA? THIS ACTION IS IRREVERSIBLE.')) {
+                    sessionHistory = [];
+                    try {
+                        localStorage.removeItem('mindControlHistory');
+                        localStorage.removeItem('mindControlSessions');
+                        localStorage.removeItem('mindControlExcuses');
+                    } catch (e) {
+                        console.error('[SYSTEM ERROR] Failed to clear storage:', e);
+                    }
+                    
+                    terminal.innerHTML = 
+                        '<div class="empty-state" id="emptyState">' +
+                        '[ MEMORY PURGED ]<br>' +
+                        '[ SYSTEM RESET ]<br>' +
+                        'Enter your weakness. Receive your reality.' +
+                        '</div>';
+                    
+                    sessionCountEl.textContent = '0';
+                    excuseCountEl.textContent = '0';
+                    
+                    console.log('[SYSTEM] History purged');
+                }
+            }
+
+            // Escape HTML to prevent XSS
+            function escapeHtml(text) {
+                const div = document.createElement('div');
+                div.textContent = text;
+                return div.innerHTML;
+            }
+
+            // ============================================
+            // EVENT LISTENERS
+            // ============================================
+            
+            // Execute button - multiple binding methods for reliability
+            executeBtn.addEventListener('click', function(e) {
+                console.log('[SYSTEM] Execute button clicked');
+                e.preventDefault();
+                processInput();
+            });
+            
+            // Also keep inline onclick as backup (function is now in scope)
+            executeBtn.onclick = processInput;
+            
+            // Clear button
+            clearBtn.addEventListener('click', function(e) {
+                console.log('[SYSTEM] Clear button clicked');
+                e.preventDefault();
+                clearHistory();
+            });
+            clearBtn.onclick = clearHistory;
+            
+            // ENTER key using keydown (modern standard)
+            userInput.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') {
+                    console.log('[SYSTEM] Enter key pressed');
+                    e.preventDefault();
+                    processInput();
+                }
+            });
+            
+            // Focus input on load
+            userInput.focus();
+            
+            // Global error handler
+            window.addEventListener('error', function(e) {
+                console.error('[SYSTEM CRITICAL ERROR]', e.message, 'at', e.filename, ':', e.lineno);
+            });
+            
+            // Initialize
+            try {
+                loadHistory();
+                console.log('[SYSTEM] Mind Control System initialized successfully');
+                console.log('[SYSTEM] Ready for input');
+            } catch (e) {
+                console.error('[SYSTEM CRITICAL] Initialization failed:', e);
+            }
+            
+            // Expose functions to global scope for inline onclick backup
+            window.processInput = processInput;
+            window.clearHistory = clearHistory;
+        });
+    </script>
+</body>
+</html>
